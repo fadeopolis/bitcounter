@@ -14,14 +14,14 @@ using namespace bc;
 using Word = unsigned long;
 static constexpr const size_t word_bytes = sizeof(Word);
 
-static_assert(std::is_same_v<size_t, Word>);
+static_assert(std::is_same<size_t, Word>::value);
 static_assert(sizeof(size_t) == 8);
 
 #define TRUST_COMPILER 1
 // #define TRUST_COMPILER 0
 
 Count bc::bitcount(Bytes data) {
-  if constexpr (TRUST_COMPILER) {
+  if (TRUST_COMPILER) {
     size_t num_ones = 0;
 
     for (const Byte b : data) {
