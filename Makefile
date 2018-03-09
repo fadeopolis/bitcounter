@@ -6,7 +6,7 @@ RELEASE_FLAGS = -g -DNDEBUG -O3 -march=native -mtune=native
 
 CFG_FLAGS = $(RELEASE_FLAGS)
 
-STD_FLAGS     = -std=c++14
+STD_FLAGS     = -std=c++1z
 WALL_FLAGS    = -Wall -Wextra -Werror
 
 CXXFLAGS = $(CFG_FLAGS) $(OPTIMIZATION_FLAGS) $(STD_FLAGS) $(OMP_FLAGS) $(WALL_FLAGS)

@@ -104,14 +104,12 @@ Result<void*,std::error_code> bc::sys::mmap(int fd, size_t length) {
   // MAP_RESILIENT_MEDIA flag.  These flags are only usable when mapping
   // with PROT_READ, so take care not to specify them otherwise.
   //----------------------------------------------------------------------
-  if (Mode == readonly) {
 #if defined(MAP_RESILIENT_CODESIGN)
-    flags |= MAP_RESILIENT_CODESIGN;
+  flags |= MAP_RESILIENT_CODESIGN;
 #endif
 #if defined(MAP_RESILIENT_MEDIA)
-    flags |= MAP_RESILIENT_MEDIA;
+  flags |= MAP_RESILIENT_MEDIA;
 #endif
-  }
 #endif // #if defined (__APPLE__)
 
   void *const mapping = ::mmap(nullptr, length, prot, flags, fd, 0);
