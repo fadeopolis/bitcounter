@@ -1,4 +1,5 @@
 
+#include "bc_openmp.hpp"
 #include "bitcnt.hpp"
 #include "config.h"
 #include <cassert> // for assert
@@ -82,7 +83,7 @@ struct alignas(ALIGNMENT) Chunk {
 static uint64_t popcount_chunk(const Chunk &data) {
   uint64_t sum = 0;
 
-  #pragma omp simd reduction(+: sum)
+  BC_OMP(simd reduction(+: sum))
   for (size_t i = 0; i < Chunk::SIZE; i++) {
     /// GCC (at least 9.2.1) and Clang (at least 9.0.1) cannot vectorize __builtin_popcount
     /// So we use our SWAR version which they can vectorize

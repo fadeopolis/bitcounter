@@ -20,7 +20,8 @@ set(BC_GENERATED_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/gen")
 ################################################################################
 
 option(BC_OPTIMIZE_FOR_HOST    "Pass compiler flags to optimize for the CPU of this machine." ON)
-option(BC_USE_BUILTIN_POPCOUNT "Use __builtin_popcount when supported." OFF)
+option(BC_USE_BUILTIN_POPCOUNT "Use __builtin_popcount, if supported." OFF)
+option(BC_USE_OPENMP           "Use OpenMP for parallel processing, if supported." ON)
 
 ################################################################################
 
@@ -43,7 +44,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   # TODO
 endif()
 
-if(OpenMP_CXX_FOUND)
+if(BC_USE_OPENMP AND OpenMP_CXX_FOUND)
   set(BC_OMP_FLAGS ${OpenMP_CXX_FLAGS})
   set(BC_OMP_LIBS ${OpenMP_CXX_LIB_NAMES})
 endif()
@@ -60,11 +61,12 @@ configure_file(src/config.h.in "${BC_GENERATED_OUTPUT_DIRECTORY}/config.h")
 ################################################################################
 
 add_library(bc
+  src/bc_openmp.hpp
   src/bitcnt.cpp
   src/bitcnt.hpp
   src/result.hpp
-  src/sys.hpp
   src/sys-unix.cpp
+  src/sys.hpp
   "${BC_GENERATED_OUTPUT_DIRECTORY}/config.h"
 )
 target_compile_options(bc PUBLIC ${BC_WARNING_FLAGS} ${BC_OPTIMIZE_FLAGS} ${BC_OMP_FLAGS})

@@ -2,6 +2,7 @@
 #include "bitcnt.hpp"
 #include "result.hpp"
 #include "sys.hpp"
+#include "bc_openmp.hpp"
 #include <cstdio>       // printf
 #include <memory>       // unique_ptr
 #include <system_error> // std::error_code
@@ -210,7 +211,7 @@ int main(int argc, const char *const *argv) {
   } else {
     Count total;
 
-    #pragma omp parallel for shared(total)
+    BC_OMP(parallel for shared(total) schedule(dynamic))
     for (int i = 1; i < argc; i++) {
       {
         const std::string filename = argv[i];
@@ -221,9 +222,10 @@ int main(int argc, const char *const *argv) {
         } else {
           print_count(*cnt, filename);
 
-          #pragma omp atomic
+          BC_OMP(atomic)
           total.ones += cnt->ones;
-          #pragma omp atomic
+
+          BC_OMP(atomic)
           total.zeroes += cnt->zeroes;
         }
       }
