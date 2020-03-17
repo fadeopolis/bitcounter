@@ -1,2 +1,11 @@
 language: cpp
-script: make
+os: linux
+dist: bionic
+# compiler: clang
+# compiler: gcc
+
+  # addons:
+  #   apt:
+  #     packages: cmake openmp
+
+script: ./travis-build.sh

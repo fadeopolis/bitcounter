@@ -69,17 +69,17 @@ Result<int,std::error_code> bc::sys::open(const std::string &file) {
 // #endif
 }
 
-Result<Unit,std::error_code> bc::sys::close(int fd) {
+Result<std::nullopt_t,std::error_code> bc::sys::close(int fd) {
   int ret = retry_after_signal(-1, ::close, fd);
 
   if (ret == -1) {
     return error_from_errno();
   }
 
-  return UNIT;
+  return std::nullopt;
 }
 
-Result<ssize_t,std::error_code> bc::sys::read(int fd, size_t count, Byte *buffer) {
+Result<ssize_t,std::error_code> bc::sys::read(int fd, size_t count, uint8_t *buffer) {
   ssize_t bytes_read = retry_after_signal(-1, ::read, fd, (void*) buffer, count);
 
   if (bytes_read == -1)
@@ -119,14 +119,14 @@ Result<void*,std::error_code> bc::sys::mmap(int fd, size_t length) {
   return mapping;
 }
 
-Result<Unit,std::error_code> bc::sys::munmap(void *mapping, size_t length) {
+Result<std::nullopt_t,std::error_code> bc::sys::munmap(void *mapping, size_t length) {
   const int ret = ::munmap(mapping, length);
 
   if (ret == -1) {
     return error_from_errno();
   }
 
-  return UNIT;
+  return std::nullopt;
 }
 
 Result<Stat,std::error_code> bc::sys::stat(int fd) {

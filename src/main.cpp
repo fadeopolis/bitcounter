@@ -1,10 +1,10 @@
 
-#include "slice.hpp"
-#include "result.hpp"
 #include "bitcnt.hpp"
+#include "result.hpp"
 #include "sys.hpp"
-#include <cstdio>
-#include <system_error>
+#include <cstdio>       // printf
+#include <memory>       // unique_ptr
+#include <system_error> // std::error_code
 
 using namespace bc;
 
@@ -26,11 +26,29 @@ auto on_exit(Fn &&fn) {
 }
 
 void print_count(Count cnt, const std::string &filename) {
-  printf("%16zu %16zu (%f) %16zu (%f) %s\n",
-         cnt.bits(),
-         cnt.ones, cnt.percent_ones(),
-         cnt.zeroes, cnt.percent_zeroes(),
-         filename.c_str());
+  const double KILO = 1'000;
+  const double MEGA = 1'000'000;
+  const double GIGA = 1'000'000'000;
+
+  const char *unit = "B ";
+  double amount = cnt.bits() / 8;
+
+  if (amount >= GIGA) {
+    unit   = "GB";
+    amount = amount / GIGA;
+  } else if (amount >= MEGA) {
+    unit   = "MB";
+    amount = amount / MEGA;
+  } else if (amount >= KILO) {
+    unit   = "kB";
+    amount = amount / KILO;
+  }
+
+  printf("%6.1f %s - %10.3f%% ones - %10.3f%% zeroes - %s\n",
+    amount, unit,
+    cnt.percent_ones() * 100,
+    cnt.percent_zeroes() * 100,
+    filename.c_str());
 }
 
 struct Error final {
@@ -116,7 +134,7 @@ struct File_Bit_Counter final {
     return stream_bitcount(fd, name);
   }
 private:
-  Result<bool, std::error_code> should_mmap(sys::Stat stat) const {
+  bool should_mmap(sys::Stat stat) const {
     // If this not a file or a block device (e.g. it's a named pipe
     // or character device), we can't trust the size.
     // Stream in chunk by chunk
@@ -133,14 +151,14 @@ private:
 
   /// read stream in chunk by chunk and do popcount of each chunk
   Result<Count, Error> stream_bitcount(int fd, const std::string &name) const {
-    Byte buffer[chunk_size];
+    Bitcount_Buffer buffer = Bitcount_Buffer::allocate(chunk_size);
 
     Count accum;
 
     ssize_t bytes_read;
     // read until we hit EOF.
     do {
-      auto ret = sys::read(fd, chunk_size, buffer);
+      auto ret = sys::read(fd, chunk_size, buffer.get());
 
       if (!ret) {
         return Error{ret, "error reading file " + escape(name)};
@@ -148,9 +166,7 @@ private:
         bytes_read = ret.get_value();
       }
 
-      Bytes bytes{size_t(bytes_read), buffer};
-
-      accum += bc::bitcount(bytes);
+      accum += bc::bitcount(bytes_read, buffer.get());
     } while (bytes_read != 0);
 
     return accum;
@@ -164,9 +180,11 @@ private:
     }
     auto unmapper = on_exit([&]() { sys::munmap(*mmap, size); });
 
-    Bytes bytes{size, (Byte*) *mmap};
+    const uint8_t *data = (const uint8_t*) *mmap;
 
-    Count accum = bc::bitcount(bytes);
+    assert((uintptr_t(data) % 64 == 0) && "mmap returned unaligned data?");
+
+    Count accum = bc::bitcount(size, data);
     return accum;
   }
 
@@ -202,12 +220,12 @@ int main(int argc, const char *const *argv) {
           fprintf(stderr, "error: %s\n", cnt.get_error().message().c_str());
         } else {
           print_count(*cnt, filename);
-        }
 
-        #pragma omp atomic
-        total.ones += cnt->ones;
-        #pragma omp atomic
-        total.zeroes += cnt->zeroes;
+          #pragma omp atomic
+          total.ones += cnt->ones;
+          #pragma omp atomic
+          total.zeroes += cnt->zeroes;
+        }
       }
     }
 

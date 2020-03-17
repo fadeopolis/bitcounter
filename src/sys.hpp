@@ -1,11 +1,11 @@
 
 #pragma once
 
-#include "slice.hpp"
-#include "result.hpp"
-#include "unit.hpp"
-#include <string>
-#include <system_error>
+#include "result.hpp"   // bc::Result
+#include <cstdint>      // uint8_t
+#include <optional>     // std::nullopt_t
+#include <string>       // std::string
+#include <system_error> // std::error_code
 
 namespace bc::sys {
 
@@ -20,15 +20,15 @@ Result<size_t,std::error_code> get_page_size();
 Result<int,std::error_code> open(const std::string &file);
 
 /// close file
-Result<Unit,std::error_code> close(int fd);
+Result<std::nullopt_t,std::error_code> close(int fd);
 
 /// read chunk from file
-Result<ssize_t,std::error_code> read(int fd, size_t count, Byte *buf);
+Result<ssize_t,std::error_code> read(int fd, size_t count, uint8_t *buf);
 
 /// map entire file into memory, readonly
 Result<void*,std::error_code> mmap(int fd, size_t length);
 
-Result<Unit,std::error_code> munmap(void*, size_t length);
+Result<std::nullopt_t,std::error_code> munmap(void*, size_t length);
 
 struct Stat {
   enum File_Type {

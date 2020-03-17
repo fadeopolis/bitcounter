@@ -1,39 +1,45 @@
 
 #pragma once
 
-#include <cassert>
-#include <variant>
+#include <cassert>     // assert
+#include <variant>     // std::variant
+#include <type_traits> // std::is_same_v
 
 namespace bc {
 
 template<typename T, typename Err>
 struct Result final {
+  using value_type = T;
+  using error_type = Err;
+
+  static_assert(!std::is_same_v<value_type, error_type>);
+
   /// ctor/dtor
 
-  Result(const T &t) : _data{std::in_place_index<value_index()>, t} {}
+  Result(const T &val) : _data{std::in_place_type<value_type>, val} {}
 
-  Result(const Err &err) : _data{std::in_place_index<error_index()>, err} {}
+  Result(const Err &err) : _data{std::in_place_type<error_type>, err} {}
 
   /// observers
 
   bool has_value() const {
     assert(!_data.valueless_by_exception());
-    return _data.index() == value_index();
+    return std::holds_alternative<value_type>(_data);
   }
 
   bool has_error() const {
     assert(!_data.valueless_by_exception());
-    return _data.index() == error_index();
+    return std::holds_alternative<error_type>(_data);
   }
 
   T &get_value() {
     assert(has_value());
-    return std::get<value_index()>(_data);
+    return std::get<value_type>(_data);
   }
 
   const T &get_value() const {
     assert(has_value());
-    return std::get<value_index()>(_data);
+    return std::get<value_type>(_data);
   }
 
   T &get_value_or(T &default_) {
@@ -46,12 +52,12 @@ struct Result final {
 
   Err &get_error() {
     assert(has_error());
-    return std::get<error_index()>(_data);
+    return std::get<error_type>(_data);
   }
 
   const Err &get_error() const {
     assert(has_error());
-    return std::get<error_index()>(_data);
+    return std::get<error_type>(_data);
   }
 
   explicit operator bool() const {
@@ -74,9 +80,6 @@ struct Result final {
     return get_value();
   }
 private:
-  constexpr static inline size_t value_index() { return 0; }
-  constexpr static inline size_t error_index() { return 1; }
-
   typename std::variant<T, Err> _data;
 };
 

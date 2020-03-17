@@ -1,8 +1,9 @@
 
 #pragma once
 
-#include "slice.hpp"
-#include <stddef.h>
+#include <cstddef> // size_t
+#include <cstdint> // uint8_t
+#include <memory>  // std::unique_ptr
 
 namespace bc {
 
@@ -34,6 +35,22 @@ struct Count final {
   }
 };
 
-Count bitcount(Bytes data);
+/// Data must be aligned to 64 bytes
+Count bitcount(size_t size, const uint8_t *data);
+
+/// Wrapper for data properly aligned for bitcount().
+struct Bitcount_Buffer {
+  static Bitcount_Buffer allocate(size_t size);
+
+  Bitcount_Buffer(Bitcount_Buffer &&that) : _ptr{that._ptr} { that._ptr = nullptr; }
+  Bitcount_Buffer(const Bitcount_Buffer&) = delete;
+  ~Bitcount_Buffer();
+
+  uint8_t *get() { return _ptr; }
+private:
+  explicit Bitcount_Buffer(uint8_t *ptr) : _ptr{ptr} {}
+
+  uint8_t *_ptr;
+};
 
 } // end namespace bc
