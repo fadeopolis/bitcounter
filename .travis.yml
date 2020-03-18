@@ -10,3 +10,5 @@ jobs:
     - os: linux
       dist: bionic
       compiler: clang
+    - os: osx
+      osx_image: xcode10.3

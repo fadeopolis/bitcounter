@@ -4,6 +4,8 @@
 #include "config.h"
 #include <cassert> // for assert
 #include <cstdint> // for uint32_t
+#include <cstdlib> // for posix_memalign, abort
+#include <cstdio>  // for fprintf
 
 using namespace bc;
 
@@ -152,13 +154,15 @@ Count bc::bitcount(size_t size, const uint8_t *data) {
 }
 
 Bitcount_Buffer bc::Bitcount_Buffer::allocate(size_t size) {
-  uint8_t *data = (uint8_t*) aligned_alloc(ALIGNMENT, size);
-  if (!data) {
+  /// NOTE: mac 10.3 does not have aligned_alloc
+  void *data = nullptr;
+
+  if (posix_memalign(&data, ALIGNMENT, size) != 0) {
     fprintf(stderr, "bc::alloc_bitcount_buffer: out of memory\n");
     abort();
   }
 
-  return Bitcount_Buffer{data};
+  return Bitcount_Buffer{(uint8_t*) data};
 }
 
 bc::Bitcount_Buffer::~Bitcount_Buffer() {
