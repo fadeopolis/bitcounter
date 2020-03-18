@@ -56,12 +56,16 @@ constexpr static uint32_t popcount_swar_32(uint32_t n) {
   const uint32_t g = (f + (f >> 4)) & rep4(0b0000'1111);
 
   /// Step 2.3)
-  /// h == <0000 PC(b0 ... b7)  000 PC(b0 ... b15) 000  PC(b0 ... b23) 000 PC(b0 ... b31)>
-  /// i == <000  PC(b0 ... b31) 000 00000          000  00000          000 00000>
-  const uint32_t h = g * rep4(0b0000'0001);
-  const uint32_t i = h >> 24;
+  /// i == <0000 PC(b0 ... b31) 0000 0000 0000 0000 0000 0000>
+  const uint32_t i = g % 255;
 
-  /// Step 2.3 is the tricky bit, we basically abuse multiplication to do a horizontal prefix sum.
+  /// Step 2.3 is the tricky bit.
+  /// We use an arithmetic trick called 'casting out nines' to sum the four bytes.
+  /// To be precise we are 'casting out 255s', that is we interpret g as a 4-digit number
+  /// in base 256.
+  /// Normally casting out does not compute a digit sum, only the digital root.
+  /// It computes the digit sum here because the individual digits never sum up to a
+  /// number bigger than or equal to 255.
 
   return i;
 }
